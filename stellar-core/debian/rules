@@ -50,3 +50,6 @@ override_dh_strip:
 
 # Disable tests at build time
 override_dh_auto_test:
+
+override_dh_builddeb:
+	dh_builddeb -- -Zxz
