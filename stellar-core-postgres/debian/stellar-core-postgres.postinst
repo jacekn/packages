@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 # postinst script for stellar-core-postgres
 #
 # see: dh_installdeb(1)
@@ -22,31 +22,60 @@ DBNAME=stellar;
 case "$1" in
   configure)
     # check stellar user exists on this 
+    date
     if ! getent passwd stellar > /dev/null ;then
       adduser --system --group --quiet --home /var/lib/stellar \
         --no-create-home --disabled-password --shell /bin/bash $ROLE;
     fi
 
+    date
+    # Wait until DB is ready
+    for i in $(seq 1 6); do
+      if ! runuser -l postgres -c "/usr/bin/pg_isready" ;then
+        echo "DB down, sleeping before retry"
+        sleep 5
+        fail=1
+      else
+        echo "DB up, moving on"
+        fail=0
+        break
+      fi
+    done
+
+    if [ $fail -eq 1 ];then
+        echo "Timeout out waiting for database to be up"
+        exit 1
+    fi
+
+    date
     if [ -x /usr/bin/createuser ];then
       # create stellar role
 
       if ! echo "SELECT rolname FROM pg_roles" | runuser -l postgres -c "psql -tA" | grep ${ROLE} 2>&1 > /dev/null;then
         runuser -l postgres -c "/usr/bin/createuser -dl ${ROLE}"
+      else
+        echo "DB role existed, skipping creation"
       fi
     fi
 
+    date
     if [ -x /usr/bin/createdb ];then
       # create stellar db
       if ! runuser -l postgres -c "psql -lqt" | cut -d \| -f 1 | grep -c ${DBNAME} 2>&1 > /dev/null;then
         runuser -l postgres -c "/usr/bin/createdb --owner ${ROLE} ${DBNAME}"
+      else
+        echo "DB existed, skipping creation"
       fi
     fi
 
+    date
     # iniitalise db
     if [ -x /usr/bin/stellar-core ];then
       # if we can not find a peers table, --newdb
       if ! echo "SELECT 'stellar' FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'peers';" | runuser -l ${ROLE} -c "psql -tA" | grep 'stellar' 2>&1 > /dev/null;then
         runuser -l ${ROLE} -c "/usr/bin/stellar-core --conf /etc/stellar/stellar-core.cfg new-db"
+      else
+        echo "DB already initialised, skipping"
       fi
     fi
   ;;
