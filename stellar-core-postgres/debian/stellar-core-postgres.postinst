@@ -22,29 +22,9 @@ DBNAME=stellar;
 case "$1" in
   configure)
     # check stellar user exists on this 
-    date
     if ! getent passwd stellar > /dev/null ;then
       adduser --system --group --quiet --home /var/lib/stellar \
         --no-create-home --disabled-password --shell /bin/bash $ROLE;
-    fi
-
-    date
-    # Wait until DB is ready
-    for i in $(seq 1 6); do
-      if ! runuser -l postgres -c "/usr/bin/pg_isready" ;then
-        echo "DB down, sleeping before retry"
-        sleep 5
-        fail=1
-      else
-        echo "DB up, moving on"
-        fail=0
-        break
-      fi
-    done
-
-    if [ $fail -eq 1 ];then
-        echo "Timeout out waiting for database to be up"
-        exit 1
     fi
 
     date
