@@ -31,6 +31,7 @@ case "$1" in
       # create stellar role
 
       if ! echo "SELECT rolname FROM pg_roles" | runuser -l postgres -c "psql -tA" | grep ${ROLE} 2>&1 > /dev/null;then
+        echo "createrole"
         runuser -l postgres -c "/usr/bin/createuser -dl ${ROLE}"
       else
         echo "DB role existed, skipping creation"
@@ -40,6 +41,7 @@ case "$1" in
     if [ -x /usr/bin/createdb ];then
       # create stellar db
       if ! runuser -l postgres -c "psql -lqt" | cut -d \| -f 1 | grep -c ${DBNAME} 2>&1 > /dev/null;then
+        echo "createdb"
         runuser -l postgres -c "/usr/bin/createdb --owner ${ROLE} ${DBNAME}"
       else
         echo "DB existed, skipping creation"
@@ -50,6 +52,7 @@ case "$1" in
     if [ -x /usr/bin/stellar-core ];then
       # if we can not find a peers table, --newdb
       if ! echo "SELECT 'stellar' FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'peers';" | runuser -l ${ROLE} -c "psql -tA" | grep 'stellar' 2>&1 > /dev/null;then
+        echo "new db"
         runuser -l ${ROLE} -c "/usr/bin/stellar-core --conf /etc/stellar/stellar-core.cfg new-db"
       else
         echo "DB already initialised, skipping"
