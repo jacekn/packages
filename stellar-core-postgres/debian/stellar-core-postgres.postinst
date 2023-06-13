@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 # postinst script for stellar-core-postgres
 #
 # see: dh_installdeb(1)
