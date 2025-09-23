@@ -7,6 +7,8 @@ export DH_VERBOSE = 1
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 
+
+export ASAN_OPTIONS = "verbosity=2"
 # see FEATURE AREAS in dpkg-buildflags(1)
 #export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
